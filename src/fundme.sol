@@ -27,9 +27,17 @@ contract FundMe {
 
     address public immutable i_owner;
 
+    // For easy deployment like if we choose to deploy to another chain
+    // it is not good to have our chain contract address hardcoded in
+    // our code ;
+
+    AggregatorV3Interface private s_priceFeed;
+
     //Constructor get called immediately the contract is deployed
-    constructor() {
+    // priceFeed_address is the chain price feed address from chainlink
+    constructor(address priceFeed_address) {
         i_owner = msg.sender;
+        s_priceFeed = AggregatorV3Interface(priceFeed_address);
     }
 
     function fund() public payable {
@@ -37,7 +45,7 @@ contract FundMe {
         //1. How do we send ETH to this contract?
 
         require(
-            msg.value.getConversionRate() >= MINIMUM_USD,
+            msg.value.getConversionRate(s_priceFeed) >= MINIMUM_USD,
             "Didn't send enough ether"
         ); //This sets the minimum ether to send
         funders.push(msg.sender);
@@ -48,11 +56,7 @@ contract FundMe {
     }
 
     function getVersion() public view returns (uint256) {
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(
-            0x694AA1769357215DE4FAC081bf1f309aDC325306
-        );
-
-        return priceFeed.version();
+        return s_priceFeed.version();
     }
 
     // - Withdraw funds

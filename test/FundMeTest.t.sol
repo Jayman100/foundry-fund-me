@@ -4,6 +4,7 @@ pragma solidity ^0.8.8;
 
 import {Test, console} from "forge-std/Test.sol";
 import {FundMe} from "../src/FundMe.sol";
+import {DeployFundMe} from "../script/DeployFundMe.s.sol";
 
 contract FundMeTest is Test {
     // first function is setUp function and it is use to deploy contract
@@ -11,7 +12,13 @@ contract FundMeTest is Test {
     FundMe fundMe;
 
     function setUp() external {
-        fundMe = new FundMe();
+        // fundMe = new FundMe(0x694AA1769357215DE4FAC081bf1f309aDC325306);
+
+        // Accsessing the deploy function and calling the run function to
+        //have access to the contract deployed
+
+        DeployFundMe deployFundMe = new DeployFundMe();
+        fundMe = deployFundMe.run();
     }
 
     // Is it important to prefix all test functions with test ? Yes
@@ -28,12 +35,13 @@ contract FundMeTest is Test {
         console.log(msg.sender);
         console.log(fundMe.i_owner());
 
-        assertEq(fundMe.i_owner(), address(this));
+        assertEq(fundMe.i_owner(), msg.sender);
     }
 
     function testPriceFeedVersionIsAccurate() public {
         uint256 version = fundMe.getVersion();
 
+        console.log(fundMe.getVersion());
         assertEq(version, 4);
     }
 }
