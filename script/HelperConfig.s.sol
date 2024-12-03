@@ -1,7 +1,8 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.8;
 
-import {Script} from "forge-std/Script.sol";
+import {Script} from "../lib/forge-std/src/Script.sol";
+import {MockV3Aggregator} from "../test/mocks/MockV3Aggregator.sol";
 
 //TODO: 1. Deploy mocks when we are on a local anvil chain
 //TODO: 2. Keep track of contract address across different chains
@@ -13,6 +14,9 @@ contract HelperConfig is Script {
     // This is to hold active Network we are so we can use in deployment
     NetworkConfig public activeNetworkConfig;
 
+    uint8 public constant ETH_DECIMAL = 8;
+    int256 public constant INITIAL_PRICE = 2000e8;
+
     struct NetworkConfig {
         address priceFeedAddress;
     }
@@ -23,7 +27,7 @@ contract HelperConfig is Script {
         } else if (block.chainid == 1) {
             activeNetworkConfig = getMainnetEthConfig();
         } else {
-            activeNetworkConfig = getAnvilEthConfig();
+            activeNetworkConfig = getOrCreateAnvilEthConfig();
         }
     }
 
@@ -41,5 +45,29 @@ contract HelperConfig is Script {
         return ethConfig;
     }
 
-    function getAnvilEthConfig() public pure returns (NetworkConfig memory) {}
+    function getOrCreateAnvilEthConfig() public returns (NetworkConfig memory) {
+        // We need to check if we have created a priceFeedAddress before,
+        // to avoid creating twice. if the priceFeedAddress is not invalid
+        // then just return it.
+
+        if (activeNetworkConfig.priceFeedAddress != address(0)) {
+            return activeNetworkConfig;
+        }
+
+        // 1. Deploy the mocks -> mock contract is like a dummy contract
+        // 2. Return the mock address
+
+        vm.startBroadcast();
+        MockV3Aggregator mockPriceFeed = new MockV3Aggregator(
+            ETH_DECIMAL,
+            INITIAL_PRICE
+        );
+        vm.stopBroadcast();
+
+        NetworkConfig memory anvilConfig = NetworkConfig({
+            priceFeedAddress: address(mockPriceFeed)
+        });
+
+        return anvilConfig;
+    }
 }
