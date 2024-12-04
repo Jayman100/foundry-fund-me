@@ -22,10 +22,10 @@ contract FundMe {
     //Constant and immutable keywords for gas efficiency
     uint256 public constant MINIMUM_USD = 5 * 1e18;
 
-    address[] public funders;
-    mapping(address => uint256) public addressToAmountSend;
+    address[] private s_funders;
+    mapping(address => uint256) private s_addressToAmountSend;
 
-    address public immutable i_owner;
+    address private immutable i_owner;
 
     // For easy deployment like if we choose to deploy to another chain
     // it is not good to have our chain contract address hardcoded in
@@ -48,8 +48,8 @@ contract FundMe {
             msg.value.getConversionRate(s_priceFeed) >= MINIMUM_USD,
             "Didn't send enough ether"
         ); //This sets the minimum ether to send
-        funders.push(msg.sender);
-        addressToAmountSend[msg.sender] += msg.value;
+        s_funders.push(msg.sender);
+        s_addressToAmountSend[msg.sender] += msg.value;
 
         // what is reverting?
         //undo any action before and send the remaining gas back
@@ -70,15 +70,15 @@ contract FundMe {
         //resetting fund back to zero
         for (
             uint256 funderIndex = 0;
-            funderIndex < funders.length;
+            funderIndex < s_funders.length;
             funderIndex++
         ) {
-            address funder = funders[funderIndex];
+            address funder = s_funders[funderIndex];
 
-            addressToAmountSend[funder] = 0;
+            s_addressToAmountSend[funder] = 0;
         }
-        //reset array (funders)
-        funders = new address[](0);
+        //reset array (s_funders)
+        s_funders = new address[](0);
 
         //Three ways to send ether:
         //- transfer
@@ -133,5 +133,23 @@ contract FundMe {
 
     fallback() external payable {
         fund();
+    }
+
+    /**
+     *  View / pure function (getters)
+     */
+
+    function getAddressToAmountFunded(
+        address fundingAddress
+    ) external view returns (uint256) {
+        return s_addressToAmountSend[fundingAddress];
+    }
+
+    function getFunders(uint256 index) external view returns (address) {
+        return s_funders[index];
+    }
+
+    function getOwner() external view returns (address) {
+        return i_owner;
     }
 }
