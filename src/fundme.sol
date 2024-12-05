@@ -61,6 +61,32 @@ contract FundMe {
 
     // - Withdraw funds
 
+    function cheaperWithdraw() public onlyOwner {
+        // The fundersLength is stored in memory because we can only
+        // access it inside this function and will be discarded after
+        // the function, this is good to make our withdrawal more gas
+        // efficient. Reading from storage variable cost a lot more gas
+        // than reading from memory variable -> check OPCODES (SREAD and MREAD)
+
+        uint256 fundersLength = s_funders.length;
+        for (
+            uint256 funderIndex = 0;
+            funderIndex < fundersLength;
+            funderIndex++
+        ) {
+            address funder = s_funders[funderIndex];
+
+            s_addressToAmountSend[funder] = 0;
+        }
+
+        s_funders = new address[](0);
+
+        (bool callSuccess, ) = payable(msg.sender).call{
+            value: address(this).balance
+        }("");
+        require(callSuccess, "call failed");
+    }
+
     function withdraw() public onlyOwner {
         // - Set a minimum funding value in USD
 

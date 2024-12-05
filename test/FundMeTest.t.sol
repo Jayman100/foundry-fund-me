@@ -15,6 +15,7 @@ contract FundMeTest is Test {
     address USER = makeAddr("jayman");
     uint256 constant SEND_VALUE = 0.1 ether;
     uint256 constant STARTING_BALANCE = 10 ether;
+    uint256 constant GAS_PRICE = 1;
 
     function setUp() external {
         // fundMe = new FundMe(0x694AA1769357215DE4FAC081bf1f309aDC325306);
@@ -143,6 +144,41 @@ contract FundMeTest is Test {
         // Act
         vm.startPrank(fundMe.getOwner());
         fundMe.withdraw();
+        vm.stopPrank();
+
+        //Assert
+
+        assertEq(address(fundMe).balance, 0);
+        assertEq(
+            startingOwnerBalance + startingFundMebalance,
+            fundMe.getOwner().balance
+        );
+    }
+
+    function testWithdrawFromMultipleFundersCheaper() public funded {
+        // Arrange
+        uint160 numberOfFunders = 10;
+        uint160 startingFunderIndex = 2;
+
+        for (uint160 i = startingFunderIndex; i < numberOfFunders; i++) {
+            // vm.prank(newAddress) ;
+            // vm.deal to fund the new address
+            // But there hoax function that can perform both prank and deal
+
+            // As address(0) = 0x000000000000000..; we can also generate address
+            // from other numbers too like address(2), address(1) ;
+            // as of solidity v0.8 we the need number to be used for the to be
+            // uint160
+            hoax(address(i), STARTING_BALANCE);
+            fundMe.fund{value: SEND_VALUE}();
+        }
+
+        uint256 startingOwnerBalance = fundMe.getOwner().balance;
+        uint256 startingFundMebalance = address(fundMe).balance;
+
+        // Act
+        vm.startPrank(fundMe.getOwner());
+        fundMe.cheaperWithdraw();
         vm.stopPrank();
 
         //Assert
