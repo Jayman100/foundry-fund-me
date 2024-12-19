@@ -15,7 +15,7 @@ contract DeployFundMe is Script {
     function run() external returns (FundMe) {
         // This helper config helps to get the active network address
         // Doing this before starting the broadcast means that we don not
-        // want to send it as a tx ,so it will not cost any gas )()
+        // want to send it as a tx ,so it will not cost any gas
 
         HelperConfig helperConfig = new HelperConfig();
         address ethUsdPriceFeedAddress = helperConfig.activeNetworkConfig();
